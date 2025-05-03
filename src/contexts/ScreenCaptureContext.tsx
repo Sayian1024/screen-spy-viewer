@@ -60,8 +60,9 @@ export const ScreenCaptureProvider: React.FC<{ children: React.ReactNode }> = ({
   const captureScreen = async (): Promise<CapturedScreen | null> => {
     try {
       // Use the screen capture API
+      // Fix: Remove the cursor property from MediaTrackConstraints
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { cursor: "always" },
+        video: true, // Simplified the constraints to fix TypeScript error
         audio: false
       });
       
