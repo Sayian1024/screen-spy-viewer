@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
 
@@ -16,6 +16,10 @@ interface ScreenCaptureContextType {
   deleteCapture: (id: string) => void;
   selectedCapture: CapturedScreen | null;
   setSelectedCapture: (capture: CapturedScreen | null) => void;
+  startTimer: (seconds: number) => void;
+  stopTimer: () => void;
+  isTimerRunning: boolean;
+  remainingTime: number;
 }
 
 const ScreenCaptureContext = createContext<ScreenCaptureContextType | undefined>(undefined);
@@ -31,7 +35,10 @@ export const useScreenCapture = () => {
 export const ScreenCaptureProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [captures, setCaptures] = useState<CapturedScreen[]>([]);
   const [selectedCapture, setSelectedCapture] = useState<CapturedScreen | null>(null);
-  const { isAuthenticated, user } = useAuth();
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [remainingTime, setRemainingTime] = useState(0);
+  const timerRef = useRef<number | null>(null);
+  const { isAuthenticated } = useAuth();
   
   // Load captures from local storage on mount
   useEffect(() => {
@@ -57,10 +64,24 @@ export const ScreenCaptureProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [captures, isAuthenticated]);
 
+  // Handle timer countdown
+  useEffect(() => {
+    if (isTimerRunning && remainingTime > 0) {
+      const intervalId = setInterval(() => {
+        setRemainingTime(prev => prev - 1);
+      }, 1000);
+      
+      return () => clearInterval(intervalId);
+    } else if (isTimerRunning && remainingTime === 0) {
+      // Capture screenshot when timer reaches zero
+      captureScreen();
+      setIsTimerRunning(false);
+    }
+  }, [isTimerRunning, remainingTime]);
+
   const captureScreen = async (): Promise<CapturedScreen | null> => {
     try {
       // Use the screen capture API
-      // Fix: Remove the cursor property from MediaTrackConstraints
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true, // Simplified the constraints to fix TypeScript error
         audio: false
@@ -122,6 +143,27 @@ export const ScreenCaptureProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     toast.info('Screenshot deleted');
   };
+
+  const startTimer = (seconds: number) => {
+    stopTimer(); // Stop any existing timer
+    setRemainingTime(seconds);
+    setIsTimerRunning(true);
+    toast.info(`Timer set for ${formatTime(seconds)}`);
+  };
+
+  const stopTimer = () => {
+    if (isTimerRunning) {
+      setIsTimerRunning(false);
+      setRemainingTime(0);
+      toast.info('Timer cancelled');
+    }
+  };
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
   
   return (
     <ScreenCaptureContext.Provider value={{
@@ -129,7 +171,11 @@ export const ScreenCaptureProvider: React.FC<{ children: React.ReactNode }> = ({
       captureScreen,
       deleteCapture,
       selectedCapture,
-      setSelectedCapture
+      setSelectedCapture,
+      startTimer,
+      stopTimer,
+      isTimerRunning,
+      remainingTime
     }}>
       {children}
     </ScreenCaptureContext.Provider>

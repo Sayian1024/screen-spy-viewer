@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import ScreenCaptureButton from '@/components/ScreenCaptureButton';
 import CaptureGallery from '@/components/CaptureGallery';
 import CaptureViewer from '@/components/CaptureViewer';
+import CaptureTimer from '@/components/CaptureTimer';
 
 const Dashboard: React.FC = () => {
   return (
@@ -14,10 +15,10 @@ const Dashboard: React.FC = () => {
         <p className="text-muted-foreground">Capture, view, and manage your screenshots</p>
       </div>
       
-      <div className="grid grid-cols-1 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <Card>
           <CardHeader>
-            <CardTitle>Screen Capture</CardTitle>
+            <CardTitle>Manual Capture</CardTitle>
             <CardDescription>
               Capture your entire screen, window, or tab to save as a screenshot
             </CardDescription>
@@ -32,6 +33,10 @@ const Dashboard: React.FC = () => {
           </CardFooter>
         </Card>
         
+        <CaptureTimer />
+      </div>
+      
+      <div className="grid grid-cols-1 gap-8">
         <CaptureGallery />
         <CaptureViewer />
       </div>
