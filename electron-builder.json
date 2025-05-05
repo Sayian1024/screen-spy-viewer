@@ -1,0 +1,21 @@
+
+{
+  "appId": "com.yourcompany.screencapture",
+  "productName": "Screen Capture App",
+  "directories": {
+    "output": "dist_electron"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*"
+  ],
+  "mac": {
+    "category": "public.app-category.utilities"
+  },
+  "win": {
+    "target": ["nsis"]
+  },
+  "linux": {
+    "target": ["AppImage", "deb"]
+  }
+}

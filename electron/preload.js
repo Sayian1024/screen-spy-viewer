@@ -1,6 +1,11 @@
 
-// Preload script for Electron
-window.electronAPI = {
-  // We can expose specific functions here that will be available to the renderer process
-  saveScreenshot: (imageData) => window.ipcRenderer.invoke('save-screenshot', imageData)
-};
+const { contextBridge, ipcRenderer } = require('electron');
+
+// Expose protected methods that allow the renderer process to use
+// the ipcRenderer without exposing the entire object
+contextBridge.exposeInMainWorld(
+  'electronAPI', 
+  {
+    saveScreenshot: (imageData) => ipcRenderer.invoke('save-screenshot', imageData)
+  }
+);
