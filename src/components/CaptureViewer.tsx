@@ -4,7 +4,11 @@ import { useScreenCapture } from '@/contexts/ScreenCaptureContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { Save } from 'lucide-react';
+import { Save, Download } from 'lucide-react';
+import { toast } from 'sonner';
+
+// Check if we're running in Electron
+const isElectron = window.navigator.userAgent.toLowerCase().indexOf('electron') > -1;
 
 const CaptureViewer: React.FC = () => {
   const { selectedCapture, setSelectedCapture } = useScreenCapture();
@@ -14,13 +18,28 @@ const CaptureViewer: React.FC = () => {
   }
   
   const handleDownload = () => {
-    // Create a temporary anchor element to trigger download
-    const link = document.createElement('a');
-    link.href = selectedCapture.imageData;
-    link.download = `screenshot-${format(new Date(selectedCapture.timestamp), 'yyyy-MM-dd-HH-mm-ss')}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (isElectron && window.electronAPI) {
+      // Use Electron's native save dialog
+      window.electronAPI.saveScreenshot(selectedCapture.imageData)
+        .then((result: {success: boolean, filePath?: string, message?: string}) => {
+          if (result.success) {
+            toast.success(`Screenshot saved to ${result.filePath}`);
+          } else {
+            toast.info(result.message || 'Save cancelled');
+          }
+        })
+        .catch((error: any) => {
+          toast.error(`Error saving screenshot: ${error}`);
+        });
+    } else {
+      // Web fallback - use browser download
+      const link = document.createElement('a');
+      link.href = selectedCapture.imageData;
+      link.download = `screenshot-${format(new Date(selectedCapture.timestamp), 'yyyy-MM-dd-HH-mm-ss')}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
   
   return (
@@ -52,8 +71,8 @@ const CaptureViewer: React.FC = () => {
             </p>
           </div>
           <Button onClick={handleDownload} className="gap-2 bg-brand-500 hover:bg-brand-600">
-            <Save className="h-4 w-4" />
-            Download
+            {isElectron ? <Save className="h-4 w-4" /> : <Download className="h-4 w-4" />}
+            {isElectron ? 'Save As' : 'Download'}
           </Button>
         </CardFooter>
       </Card>
